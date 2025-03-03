@@ -34,7 +34,7 @@ function App() {
   }, []);
 
   return (
-    <div className="h-screen bg-[#101010] font-sans text-base leading-6 text-white antialiased">
+    <div className="h-screen bg-[#101010] text-base leading-6 text-white antialiased">
       <Header />
       <div className="flex flex-col p-6">
         <div>
@@ -94,7 +94,7 @@ function SelectOption(props: {
       <div className="flex items-baseline justify-between gap-2 p-2">
         <div className="font-semibold">{props.title}</div>
         <div className="line-clamp-1 text-xs text-white/60">
-          {props.data[props.data.length - 1].toFixed(2)}%
+          {props.data[props.data.length - 1]?.toFixed(2) ?? "0.00"}%
         </div>
       </div>
       <div className="h-12 w-full cursor-pointer">

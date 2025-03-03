@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "npm-run-all --parallel dev:electron dev:react",
     "dev:react": "vite",
-    "dev:electron": "npm run trans:electron && cross-env NODE_ENV=development electron .",
+    "dev:electron": "npm run trans:electron && cross-env NODE_ENV=development electron . --enable-features=UseOzonePlatform --ozone-platform=wayland",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -22,6 +22,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.1",
+    "systeminformation": "^5.25.11",
     "tailwindcss": "^4.0.9"
   },
   "devDependencies": {

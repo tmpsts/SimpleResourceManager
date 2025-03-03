@@ -1,18 +1,15 @@
-import osu from "node-os-utils";
-import fs from "fs";
-import os from "os";
+import si from "systeminformation";
 import { BrowserWindow } from "electron";
 import { ipcWebContentsSend } from "./util.js";
 
 const POLLING_INTERVAL = 500;
-const cpu = osu.cpu;
-const mem = osu.mem;
 
 export function pollResources(mainWindow: BrowserWindow) {
   setInterval(async () => {
     const cpuUsage = await getCpuUsage();
-    const ramUsage = (await getRamUsage()).usedMemMb;
-    const storageData = getStorageData();
+    const ramUsage = await getRamUsage();
+    const storageData = await getStorageData();
+
     ipcWebContentsSend("statistics", mainWindow.webContents, {
       cpuUsage,
       ramUsage,
@@ -21,33 +18,49 @@ export function pollResources(mainWindow: BrowserWindow) {
   }, POLLING_INTERVAL);
 }
 
-export function getStaticData() {
-  const totalStorage = getStorageData().total;
-  const cpuModel = os.cpus()[0].model;
-  const totalMemoryGB = Math.floor(mem.totalMem() / 1024);
+export async function getStaticData(): Promise<StaticData> {
+  const [cpu, mem, storage] = await Promise.all([
+    si.cpu(),
+    si.mem(),
+    getStorageData(),
+  ]);
 
   return {
-    totalStorage,
-    cpuModel,
-    totalMemoryGB,
+    totalStorage: storage.total,
+    cpuModel: cpu.brand,
+    totalMemoryGB: Math.floor(mem.total / 1073741824), // Convert bytes to GB
   };
 }
 
-function getCpuUsage() {
-  return cpu.usage();
+async function getCpuUsage() {
+  const load = await si.currentLoad();
+  console.log("CPU raw data:", load);
+  console.log("CPU usage percentage:", load.currentLoad);
+  return load.currentLoad; // This returns the current CPU load percentage
 }
 
-function getRamUsage() {
-  return mem.used();
+async function getRamUsage() {
+  const memory = await si.mem();
+  console.log("RAM raw data:", memory);
+  const ramPercentage = (memory.used / memory.total) * 100;
+  console.log("RAM usage percentage:", ramPercentage);
+  return ramPercentage;
 }
 
-function getStorageData() {
-  const stats = fs.statfsSync(process.platform === "win32" ? "C://" : "/");
-  const total = stats.bsize * stats.blocks;
-  const free = stats.bsize * stats.bfree;
+async function getStorageData() {
+  const fsSize = await si.fsSize();
+  console.log("Storage raw data:", fsSize);
+  // Get the main drive (usually the first one)
+  const mainDrive = fsSize[0];
+
+  const totalGB = Math.floor(mainDrive.size / 1_000_000_000);
+  const usagePercentage = (mainDrive.used / mainDrive.size) * 100;
+
+  console.log("Storage total GB:", totalGB);
+  console.log("Storage usage percentage:", usagePercentage);
 
   return {
-    total: Math.floor(total / 1_000_000_000),
-    usage: 1 - free / total,
+    total: totalGB, // Convert to GB
+    usage: usagePercentage, // Convert to percentage
   };
 }

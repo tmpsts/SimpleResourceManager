@@ -8,19 +8,21 @@ export function isDev(): boolean {
 
 export function ipcMainHandle<Key extends keyof EventPayloadMapping>(
   key: Key,
-  handler: () => EventPayloadMapping[Key]
+  handler: (
+    ...args: EventPayloadMapping[Key][]
+  ) => EventPayloadMapping[Key] | Promise<EventPayloadMapping[Key]>,
 ) {
-  ipcMain.handle(key, (event) => {
+  ipcMain.handle(key, (event, ...args) => {
     if (event.senderFrame) {
       validateEventFrame(event.senderFrame);
     }
-    return handler();
+    return handler(...args);
   });
 }
 
 export function ipcMainOn<Key extends keyof EventPayloadMapping>(
   key: Key,
-  handler: (payload: EventPayloadMapping[Key]) => void
+  handler: (payload: EventPayloadMapping[Key]) => void,
 ) {
   ipcMain.on(key, (event, payload) => {
     if (event.senderFrame) {
@@ -33,7 +35,7 @@ export function ipcMainOn<Key extends keyof EventPayloadMapping>(
 export function ipcWebContentsSend<Key extends keyof EventPayloadMapping>(
   key: Key,
   webContents: WebContents,
-  payload: EventPayloadMapping[Key]
+  payload: EventPayloadMapping[Key],
 ) {
   webContents.send(key, payload);
 }
